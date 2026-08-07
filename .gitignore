@@ -56,3 +56,12 @@ models/
 
 # User specific
 .agent/
+
+# Local test artifacts
+.test_frames/
+baseline_transcript.txt
+test_dialogue.wav
+*.wav
+*.mp4
+*.mp3
+*.m4a

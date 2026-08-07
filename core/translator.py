@@ -13,6 +13,7 @@ class TranslatorEngine:
         os.environ.pop('HTTPS_PROXY', None)
 
         self.model = model
+        self.base_url = os.environ.get("LAVT_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
         print(f"Translation model: {model} (via Ollama)")
 
     def _clean_result(self, result):
@@ -36,7 +37,7 @@ class TranslatorEngine:
                 "options": {"temperature": 0.1, "num_ctx": 2048, "stop": ["\n"]}
             }
             response = requests.post(
-                "http://127.0.0.1:11434/api/generate", json=payload,
+                f"{self.base_url}/api/generate", json=payload,
                 timeout=30, proxies={"http": None, "https": None}
             )
             if response.status_code == 200:
@@ -64,7 +65,7 @@ class TranslatorEngine:
         )
         try:
             response = requests.post(
-                "http://127.0.0.1:11434/api/generate",
+                f"{self.base_url}/api/generate",
                 json={"model": self.model, "prompt": prompt, "stream": False,
                       "options": {"temperature": 0.1, "num_ctx": 2048}},
                 timeout=30, proxies={"http": None, "https": None}

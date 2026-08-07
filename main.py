@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 import time
@@ -35,9 +36,21 @@ class SubtitleApp:
         # Note: We access the same QSettings path ("LiveSubtitle", "Overlay")
         from PyQt6.QtCore import QSettings
         settings = QSettings("LiveSubtitle", "Overlay")
-        whisper_model = "kotoba-whisper-v2"  # Japanese-optimized model
-        trans_model = "hy-mt2-1.8b"  # Tencent HY-MT2 1.8B (fast)
-        self.audio_cap = AudioCapture(device_index=25)  # Realtek扬声器Loopback [25]
+        whisper_model = settings.value(
+            "whisper_model",
+            os.environ.get("LAVT_WHISPER_MODEL", "kotoba-whisper-v2")
+        )
+        trans_model = settings.value(
+            "trans_model",
+            os.environ.get("LAVT_TRANSLATOR_MODEL", "hy-mt2-1.8b")
+        )
+        device_index = os.environ.get("LAVT_AUDIO_DEVICE_INDEX")
+        try:
+            device_index = int(device_index) if device_index else None
+        except ValueError:
+            print(f"Invalid LAVT_AUDIO_DEVICE_INDEX: {device_index}; using auto-detection")
+            device_index = None
+        self.audio_cap = AudioCapture(device_index=device_index)
         # Load translation model FIRST, then Whisper (avoid loading order issue)
         self.translator = TranslatorEngine(use_ollama=False, model=trans_model)
         self.stt = STTEngine(model_size=whisper_model, device="cuda", compute_type="float16")

@@ -1,14 +1,27 @@
 @echo off
-title Live Subtitle Translator
-echo Starting Live Subtitle Translator...
+setlocal
+cd /d "%~dp0"
+title Local AV Live Translator
+echo Starting Local AV Live Translator...
 echo -----------------------------------
 
-:: Set paths for CUDA DLLs (Adjust if Python path is different on other machines)
-set "PATH=C:\Users\arthur\AppData\Local\Programs\Python\Python311\Lib\site-packages\nvidia\cublas\bin;C:\Users\arthur\AppData\Local\Programs\Python\Python311\Lib\site-packages\nvidia\cudnn\bin;%PATH%"
+if exist ".venv\Scripts\python.exe" (
+    set "PYTHON=.venv\Scripts\python.exe"
+) else (
+    set "PYTHON=python"
+)
 
-:: Run the script
-python main.py
+if not exist "%PYTHON%" (
+    echo Python was not found. Install Python 3.10+ or create .venv.
+    pause
+    exit /b 1
+)
 
-echo.
-echo Application closed.
-pause
+%PYTHON% main.py
+
+if errorlevel 1 (
+    echo.
+    echo Application exited with an error.
+    pause
+)
+endlocal

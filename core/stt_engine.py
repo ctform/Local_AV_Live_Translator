@@ -1,3 +1,4 @@
+from pathlib import Path
 from faster_whisper import WhisperModel
 import numpy as np
 import threading
@@ -6,12 +7,13 @@ import time
 
 class STTEngine:
     def __init__(self, model_size="small", device="auto", compute_type="int8"):
-        import os
-        # Check if local model exists (relative to cwd or absolute)
-        local_model_path = os.path.join(os.getcwd(), "models", model_size)
+        # Resolve models relative to the project/executable location, not the
+        # process working directory.
+        project_root = Path(__file__).resolve().parent.parent
+        local_model_path = project_root / "models" / model_size
         
         # Check for CTranslate2 format (model.bin) which faster-whisper requires
-        if os.path.exists(local_model_path) and os.path.exists(os.path.join(local_model_path, "model.bin")):
+        if local_model_path.exists() and (local_model_path / "model.bin").exists():
             print(f"Loading Whisper Model from local path: {local_model_path}")
             model_to_load = local_model_path
         else:
