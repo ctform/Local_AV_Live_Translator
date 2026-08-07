@@ -66,6 +66,8 @@ class STTEngine:
     def _process_loop(self):
         accumulated_audio = np.array([], dtype=np.float32)
         last_preview_text = ""
+        last_nonempty_text = ""
+        last_final_text = ""
         same_text_count = 0
         
         while self.running:
@@ -79,6 +81,8 @@ class STTEngine:
                 
                 if new_chunks:
                     chunk_data = np.concatenate(new_chunks).astype(np.float32)
+                    if len(accumulated_audio) == 0:
+                        last_final_text = ""
                     accumulated_audio = np.concatenate((accumulated_audio, chunk_data)).astype(np.float32)
                 
                 # Limit buffer size (e.g., keep last 8 seconds max)
@@ -99,11 +103,11 @@ class STTEngine:
                     try:
                          # Transcribe current buffer (Fast greedy search)
                         segments, info = self.model.transcribe(
-                            accumulated_audio, 
-                            beam_size=1, 
-                            language="ja", 
-                            vad_filter=True, # Re-enable VAD to stop hallucinations
-                            vad_parameters=dict(min_silence_duration_ms=100), # Sensitive VAD
+                            accumulated_audio,
+                            beam_size=3,  # Better Japanese recognition than greedy search
+                            language="ja",
+                            vad_filter=True,  # Filter silence and reduce hallucinations
+                            vad_parameters=dict(min_silence_duration_ms=300),
                             condition_on_previous_text=False
                         )
                         current_text = " ".join([segment.text for segment in segments]).strip()
@@ -114,6 +118,7 @@ class STTEngine:
                             current_text = ""
                             
                         if current_text:
+                            last_nonempty_text = current_text
                             # Send partial result (True means "is_partial")
                             print(f"Preview: {current_text}")
                             self.result_queue.put((current_text, True))
@@ -141,20 +146,25 @@ class STTEngine:
                 silence_end = (tail_energy < 0.00005 and len(accumulated_audio) > 16000 * 1.5)
 
                 if text_stable or timeout or silence_end:
-                    # Sentence ended
-                    if current_text: # Use the text we just got, no need to re-transcribe if stable
-                         print(f"FINAL (Stable={text_stable}, Timeout={timeout}): {current_text}")
-                         self.result_queue.put((current_text, False)) # False = Final
+                    # Sentence ended. Keep the last valid text if the final
+                    # transcription pass is empty because VAD trimmed the tail.
+                    final_text = current_text or last_nonempty_text
+                    if final_text and final_text != last_final_text:
+                         print(f"FINAL (Stable={text_stable}, Timeout={timeout}): {final_text}")
+                         self.result_queue.put((final_text, False)) # False = Final
+                         last_final_text = final_text
                     
                     # Clear buffer
                     accumulated_audio = np.array([], dtype=np.float32)
                     last_preview_text = ""
+                    last_nonempty_text = ""
                     same_text_count = 0
                 
                 # If pure silence for too long, just clear
                 if energy < 0.00002 and len(accumulated_audio) > 16000 * 3:
                      accumulated_audio = np.array([], dtype=np.float32)
                      last_preview_text = ""
+                     last_nonempty_text = ""
                      same_text_count = 0
 
                 time.sleep(0.15) # Refresh rate ~6fps

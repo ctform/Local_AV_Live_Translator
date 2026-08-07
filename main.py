@@ -61,43 +61,42 @@ class SubtitleApp:
         print("Application started.")
         sys.exit(self.app.exec())
 
-    def _async_translate(self, text, is_preview, lock):
-        """Background translation task"""
+    def _async_translate_batch(self, batch, lock):
+        """Translate an ordered batch without blocking the coordinator."""
         try:
             import time
-            
-            # --- CACHE LOGIC ---
-            if not hasattr(self, 'translation_cache'):
+
+            if not hasattr(self, "translation_cache"):
                 self.translation_cache = {}
-                
-            cached_cn = self.translation_cache.get(text)
-            
-            if cached_cn:
-                cn_text = cached_cn
-                latency_ms = 0 # Instant!
-                # print(f"Cache Hit for: {text[:10]}...")
-            else:
-                t0 = time.time()
-                cn_text = self.translator.translate(text)
-                latency_ms = (time.time() - t0) * 1000
-                
+
+            missing = []
+            results = {}
+            for sentence_id, text in batch:
+                cached = self.translation_cache.get(text)
+                if cached:
+                    results[sentence_id] = cached
+                else:
+                    missing.append((sentence_id, text))
+
+            if missing:
+                started = time.time()
+                translated = self.translator.translate_batch([text for _, text in missing])
+                print(f"[FINAL] BATCH TRANSLATED ({(time.time() - started) * 1000:.0f}ms): {len(missing)} sentences")
+                for (sentence_id, text), cn_text in zip(missing, translated):
+                    if cn_text:
+                        self.translation_cache[text] = cn_text
+                        results[sentence_id] = cn_text
+                if len(self.translation_cache) > 1000:
+                    self.translation_cache.clear()
+
+            # The executor is single-threaded and batches are submitted in order.
+            # Do not write the old Japanese text back over a newer partial subtitle.
+            for sentence_id, text in batch:
+                cn_text = results.get(sentence_id)
                 if cn_text:
-                    self.translation_cache[text] = cn_text
-                    if len(self.translation_cache) > 1000: self.translation_cache.clear()
-            
-            tag = "PREVIEW" if is_preview else "FINAL"
-            print(f"[{tag}] TRANSLATED ({latency_ms:.0f}ms): {cn_text}")
-            
-            # FIX: If preview, DO NOT send 'text' (JP) back, because it is old.
-            if is_preview:
-                # Use Gray color for preview to indicate instability
-                styled_cn_text = f"<span style='color: #cccccc;'>{cn_text}</span>"
-                self.bridge.update_signal.emit("", styled_cn_text)
-            else:
-                # Final text is normal (white/default)
-                # Ensure we strip potential HTML tags if we want clean text, but here we just send raw
-                self.bridge.update_signal.emit(text, cn_text)
-            
+                    self.bridge.update_signal.emit("", cn_text)
+                else:
+                    print(f"[FINAL] Translation failed for sentence {sentence_id}: {text}")
         finally:
             with lock:
                 self.is_translating = False
@@ -110,7 +109,11 @@ class SubtitleApp:
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.is_translating = False
         translating_lock = Lock()
-        
+        pending_finals = []
+        last_final_text = ""
+        next_sentence_id = 1
+        batch_started_at = None
+        BATCH_WINDOW = 0.12
         
         print("Coordinator loop started.")
         while self.running:
@@ -130,10 +133,23 @@ class SubtitleApp:
                     # final result before sending anything to the translator.
                     self.bridge.update_signal.emit(jp_text, "PENDING_KEEP_OLD")
                 else:
-                    # FINAL: translate once, without preview throttling.
-                    with translating_lock:
+                    # FINAL: queue every sentence, then combine nearby short
+                    # sentences into one Ollama request.
+                    if jp_text and jp_text != last_final_text:
+                        pending_finals.append((next_sentence_id, jp_text))
+                        next_sentence_id += 1
+                        last_final_text = jp_text
+                        if batch_started_at is None:
+                            batch_started_at = time.time()
+
+            if pending_finals and (time.time() - batch_started_at >= BATCH_WINDOW):
+                with translating_lock:
+                    if not self.is_translating:
+                        batch = pending_finals
+                        pending_finals = []
+                        batch_started_at = None
                         self.is_translating = True
-                    executor.submit(self._async_translate, jp_text, False, translating_lock)
+                        executor.submit(self._async_translate_batch, batch, translating_lock)
 
             time.sleep(0.01) # Keep the coordinator responsive
 
