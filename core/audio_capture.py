@@ -7,6 +7,7 @@ import numpy as np
 import threading
 import queue
 import time
+from scipy.signal import resample_poly
 
 class AudioCapture:
     def __init__(self, sample_rate=16000, device_index=None):
@@ -171,11 +172,13 @@ class AudioCapture:
                             audio_data = audio_data.reshape(-1, channels)
                             audio_data = np.mean(audio_data, axis=1)
                         
-                        # Resample if needed (simple decimation for now)
+                        # Resample with an anti-aliasing polyphase filter.
                         if dev_sample_rate != self.sample_rate:
-                            ratio = dev_sample_rate / self.sample_rate
-                            indices = np.arange(0, len(audio_data), ratio).astype(int)
-                            audio_data = audio_data[indices]
+                            audio_data = resample_poly(
+                                audio_data,
+                                self.sample_rate,
+                                dev_sample_rate,
+                            ).astype(np.float32)
                         
                         self.audio_queue.put(audio_data.astype(np.float32))
                         
