@@ -51,6 +51,14 @@ class STTEngine:
         self.running = False
         self.processing_thread = None
 
+        # Endpoint detection is intentionally conservative: keep a short
+        # hangover after speech so Japanese sentence endings are not clipped.
+        self.speech_energy_threshold = 0.00005
+        self.silence_energy_threshold = 0.00002
+        self.silence_hangover_frames = 3  # about 0.45s at the 150ms refresh rate
+        self.minimum_final_audio_seconds = 1.0
+        self.maximum_audio_seconds = 6.0
+
     def start(self):
         self.running = True
         self.processing_thread = threading.Thread(target=self._process_loop, daemon=True)
@@ -71,6 +79,7 @@ class STTEngine:
         last_nonempty_text = ""
         last_final_text = ""
         same_text_count = 0
+        silence_frames = 0
         
         while self.running:
 
@@ -101,7 +110,8 @@ class STTEngine:
                 # --- 2. Real-time Preview (Intermediate) ---
                 # Check energy to avoid hallucinating on silence
                 energy = np.mean(accumulated_audio**2)
-                if energy > 0.00005:
+                if energy > self.speech_energy_threshold:
+                    silence_frames = 0
                     try:
                          # Transcribe current buffer (Fast greedy search)
                         segments, info = self.model.transcribe(
@@ -140,12 +150,22 @@ class STTEngine:
                 # Condition A: Text hasn't changed for 3 frames (approx 0.5s) AND it's not empty
                 text_stable = (same_text_count >= 3 and len(current_text) > 0)
                 
-                # Condition B: Hard timeout (> 5s audio)
-                timeout = (len(accumulated_audio) > 16000 * 5)
-                
-                # Condition C: Silence at tail (strict)
+                # Condition B: Hard timeout. Keep the final window long enough
+                # to avoid cutting off a Japanese phrase mid-utterance.
+                timeout = (len(accumulated_audio) > 16000 * self.maximum_audio_seconds)
+
+                # Condition C: Tail silence with hangover. A single quiet frame
+                # is not enough to finalize, which prevents clipped endings.
                 tail_energy = np.mean(accumulated_audio[-int(16000*0.4):]**2) if len(accumulated_audio) > 3000 else 0
-                silence_end = (tail_energy < 0.00005 and len(accumulated_audio) > 16000 * 1.5)
+                if tail_energy < self.silence_energy_threshold:
+                    silence_frames += 1
+                else:
+                    silence_frames = 0
+                silence_end = (
+                    silence_frames >= self.silence_hangover_frames
+                    and len(accumulated_audio) > 16000 * self.minimum_final_audio_seconds
+                )
+
 
                 if text_stable or timeout or silence_end:
                     # Sentence ended. Keep the last valid text if the final
@@ -161,9 +181,10 @@ class STTEngine:
                     last_preview_text = ""
                     last_nonempty_text = ""
                     same_text_count = 0
+                    silence_frames = 0
                 
                 # If pure silence for too long, just clear
-                if energy < 0.00002 and len(accumulated_audio) > 16000 * 3:
+                if energy < self.silence_energy_threshold and len(accumulated_audio) > 16000 * 3:
                      accumulated_audio = np.array([], dtype=np.float32)
                      last_preview_text = ""
                      last_nonempty_text = ""
