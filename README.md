@@ -57,13 +57,46 @@ models/kotoba-whisper-v2/
 
 请将模型文件放在上述目录。模型文件较大，默认被 `.gitignore` 排除，不应提交到 GitHub。
 
-### 翻译模型
+### 模型简介与下载地址
 
-- Ollama 模型：`hy-mt2-1.8b`
-- Ollama API：`http://127.0.0.1:11434/api/generate`
-- 推理方式：本地 HTTP、非流式响应
-- 默认温度：`0.1`
-- 上下文长度：`2048`
+本项目使用以下两个模型：
+
+#### 1. kotoba-whisper-v2（稳定版默认）
+
+- **用途**：针对日语语音优化，适合本项目的日语实时字幕场景。
+- **格式**：必须使用 CTranslate2 / faster-whisper 格式。
+- **官方仓库**：[`kotoba-tech/kotoba-whisper-v2.0-faster`](https://huggingface.co/kotoba-tech/kotoba-whisper-v2.0-faster)
+- **国内镜像仓库**：[`hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster)
+- **国内直链**：将仓库文件地址中的域名替换为 `hf-mirror.com`，例如：
+  [`config.json`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster/resolve/main/config.json)、
+  [`model.bin`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster/resolve/main/model.bin)、
+  [`tokenizer.json`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster/resolve/main/tokenizer.json)、
+  [`vocabulary.json`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster/resolve/main/vocabulary.json)、
+  [`preprocessor_config.json`](https://hf-mirror.com/kotoba-tech/kotoba-whisper-v2.0-faster/resolve/main/preprocessor_config.json)。
+- **官方直链**：对应文件可从[官方文件列表](https://huggingface.co/kotoba-tech/kotoba-whisper-v2.0-faster/tree/main)下载。
+
+下载后放入：
+
+```text
+models/kotoba-whisper-v2/
+```
+
+如果国内镜像无法访问，再使用 Hugging Face 官方文件列表。不要下载 `.pt`、Transformers 或 Safetensors 格式文件；本项目需要 CTranslate2 / faster-whisper 格式。
+
+### 翻译模型：hy-mt2-1.8b
+
+- **用途**：将识别出的日文翻译为简体中文。
+- **运行方式**：通过本机 Ollama API 调用，不由 Whisper 加载。
+- **模型来源与命令**：
+  ```bash
+  ollama pull hy-mt2-1.8b
+  ollama run hy-mt2-1.8b
+  ```
+- **国内镜像**：Ollama 模型目前没有确认到可直接替代的官方国内仓库；建议使用 Ollama 官方模型源，或按网络环境配置 Ollama 镜像。
+- **API 地址**：`http://127.0.0.1:11434/api/generate`
+- **推理方式**：本地 HTTP、非流式响应。
+- **默认温度**：`0.1`。
+- **上下文长度**：`2048`。
 
 ## 环境要求
 
