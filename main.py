@@ -93,7 +93,11 @@ class SubtitleApp:
 
             if missing:
                 started = time.time()
-                translated = self.translator.translate_batch([text for _, text in missing])
+                try:
+                    translated = self.translator.translate_batch([text for _, text in missing])
+                except Exception as exc:
+                    print(f"[FINAL] Batch translation error: {exc}")
+                    translated = [""] * len(missing)
                 print(f"[FINAL] BATCH TRANSLATED ({(time.time() - started) * 1000:.0f}ms): {len(missing)} sentences")
                 for (sentence_id, text), cn_text in zip(missing, translated):
                     if cn_text:
@@ -120,9 +124,11 @@ class SubtitleApp:
         
         # Executor for async translation
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.translation_executor = executor
         self.is_translating = False
         translating_lock = Lock()
         pending_finals = []
+        max_pending_finals = 32
         last_final_text = ""
         next_sentence_id = 1
         batch_started_at = None
@@ -149,6 +155,9 @@ class SubtitleApp:
                     # FINAL: queue every sentence, then combine nearby short
                     # sentences into one Ollama request.
                     if jp_text and jp_text != last_final_text:
+                        if len(pending_finals) >= max_pending_finals:
+                            # Preserve order while preventing unbounded latency.
+                            pending_finals = pending_finals[-(max_pending_finals - 1):]
                         pending_finals.append((next_sentence_id, jp_text))
                         next_sentence_id += 1
                         last_final_text = jp_text
@@ -170,6 +179,9 @@ class SubtitleApp:
         self.running = False
         self.audio_cap.stop()
         self.stt.stop()
+        executor = getattr(self, "translation_executor", None)
+        if executor:
+            executor.shutdown(wait=False, cancel_futures=True)
 
 if __name__ == "__main__":
     subtitle_app = SubtitleApp()

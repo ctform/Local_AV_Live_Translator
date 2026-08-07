@@ -46,8 +46,8 @@ class STTEngine:
             print(f"Error loading model (trying CPU fallback): {e}")
             self.model = WhisperModel(model_to_load, device="cpu", compute_type="int8")
 
-        self.input_queue = queue.Queue()
-        self.result_queue = queue.Queue()
+        self.input_queue = queue.Queue(maxsize=32)
+        self.result_queue = queue.Queue(maxsize=64)
         self.running = False
         self.processing_thread = None
 
@@ -71,7 +71,16 @@ class STTEngine:
 
     def add_audio(self, audio_data):
         if audio_data is not None and len(audio_data) > 0:
-            self.input_queue.put(audio_data)
+            try:
+                self.input_queue.put_nowait(audio_data)
+            except queue.Full:
+                # Drop the oldest audio chunk rather than letting latency grow
+                # without bound when recognition temporarily falls behind.
+                try:
+                    self.input_queue.get_nowait()
+                    self.input_queue.put_nowait(audio_data)
+                except queue.Empty:
+                    pass
 
     def _process_loop(self):
         accumulated_audio = np.array([], dtype=np.float32)
@@ -133,7 +142,14 @@ class STTEngine:
                             last_nonempty_text = current_text
                             # Send partial result (True means "is_partial")
                             print(f"Preview: {current_text}")
-                            self.result_queue.put((current_text, True))
+                            try:
+                                self.result_queue.put_nowait((current_text, True))
+                            except queue.Full:
+                                try:
+                                    self.result_queue.get_nowait()
+                                    self.result_queue.put_nowait((current_text, True))
+                                except queue.Empty:
+                                    pass
                             
                             # Stable text detection
                             if current_text == last_preview_text:
