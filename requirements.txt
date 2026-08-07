@@ -1,0 +1,7 @@
+PyQt6>=6.6.0
+soundcard>=0.4.2
+numpy>=1.26.0
+faster-whisper>=0.10.0
+deep-translator>=1.11.4
+keyboard>=0.13.5
+scipy>=1.11.0
