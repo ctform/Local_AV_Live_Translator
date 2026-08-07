@@ -25,8 +25,8 @@ class SubtitleOverlay(QWidget):
         self.bg_color_end = QColor(self.settings.value("bg_color_end", "#1E0F28"))  # Dark purple
         
         # Model Settings (Restart required)
-        self.whisper_model = self.settings.value("whisper_model", "medium")
-        self.trans_model = self.settings.value("trans_model", "translategemma:4b")
+        self.whisper_model = self.settings.value("whisper_model", "kotoba-whisper-v2")
+        self.trans_model = self.settings.value("trans_model", "hy-mt2-1.8b")
         
         # Cache for Ollama models
         self.ollama_models = []

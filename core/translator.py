@@ -12,9 +12,34 @@ class TranslatorEngine:
         os.environ.pop('HTTP_PROXY', None)
         os.environ.pop('HTTPS_PROXY', None)
 
-        self.model = model
         self.base_url = os.environ.get("LAVT_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-        print(f"Translation model: {model} (via Ollama)")
+        self.model = self._resolve_model(model)
+        print(f"Translation model: {self.model} (via Ollama)")
+
+    def _resolve_model(self, requested_model):
+        """Use an installed Ollama tag when a stale saved setting is present."""
+        default_model = os.environ.get("LAVT_TRANSLATOR_MODEL", "hy-mt2-1.8b")
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=3,
+                                    proxies={"http": None, "https": None})
+            if response.status_code != 200:
+                return requested_model or default_model
+            installed = [item.get("name", "") for item in response.json().get("models", [])]
+            if requested_model in installed:
+                return requested_model
+            requested_base = (requested_model or "").split(":", 1)[0]
+            for name in installed:
+                if name.split(":", 1)[0] == requested_base:
+                    return name
+            if default_model in installed:
+                return default_model
+            default_base = default_model.split(":", 1)[0]
+            for name in installed:
+                if name.split(":", 1)[0] == default_base:
+                    return name
+        except requests.RequestException:
+            pass
+        return requested_model or default_model
 
     def _clean_result(self, result):
         result = (result or "").strip().split("\n")[0].strip()

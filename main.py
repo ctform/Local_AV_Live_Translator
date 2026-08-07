@@ -36,13 +36,13 @@ class SubtitleApp:
         # Note: We access the same QSettings path ("LiveSubtitle", "Overlay")
         from PyQt6.QtCore import QSettings
         settings = QSettings("LiveSubtitle", "Overlay")
-        whisper_model = settings.value(
-            "whisper_model",
-            os.environ.get("LAVT_WHISPER_MODEL", "kotoba-whisper-v2")
+        whisper_model = os.environ.get(
+            "LAVT_WHISPER_MODEL",
+            settings.value("whisper_model", "kotoba-whisper-v2")
         )
-        trans_model = settings.value(
-            "trans_model",
-            os.environ.get("LAVT_TRANSLATOR_MODEL", "hy-mt2-1.8b")
+        trans_model = os.environ.get(
+            "LAVT_TRANSLATOR_MODEL",
+            settings.value("trans_model", "hy-mt2-1.8b")
         )
         device_index = os.environ.get("LAVT_AUDIO_DEVICE_INDEX")
         try:

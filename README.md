@@ -157,6 +157,22 @@ python -m pip install PyAudioWPatch
 ollama pull hy-mt2-1.8b
 ```
 
+`pull` 只负责下载模型，不会启动 Ollama 服务。请先启动服务：
+
+```bash
+ollama serve
+```
+
+如果使用 Ollama Desktop，也可以直接打开 Ollama 应用，由它在后台提供服务。
+
+建议首次使用前手动预热翻译模型：
+
+```bash
+ollama run hy-mt2-1.8b
+```
+
+看到交互提示后输入一条简单测试内容，确认模型已经加载；测试完成后按 `Ctrl+D`（Windows 终端也可尝试 `Ctrl+C`）退出交互界面。这样正式启动本程序后，第一句翻译通常不会再承担模型首次加载的等待时间。
+
 确认模型可用：
 
 ```bash
