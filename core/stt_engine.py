@@ -15,7 +15,7 @@ class STTEngine:
         # Check for CTranslate2 format (model.bin) which faster-whisper requires
         if local_model_path.exists() and (local_model_path / "model.bin").exists():
             print(f"Loading Whisper Model from local path: {local_model_path}")
-            model_to_load = local_model_path
+            model_to_load = str(local_model_path)
         else:
             # Map common model sizes to Hugging Face model IDs
             model_map = {
