@@ -37,7 +37,7 @@ PyQt6 悬浮字幕
 
 - 模型：`kotoba-whisper-v2`
 - 格式：CTranslate2 / faster-whisper
-- 本地目录：`models/kotoba-whisper-v2/`
+- 本地目录：`models/kotoba-whisper-v2.2-faster/`
 - 语言：`ja`
 - `beam_size=3`
 - `vad_filter=True`
@@ -47,7 +47,7 @@ PyQt6 悬浮字幕
 模型目录至少应包含：
 
 ```text
-models/kotoba-whisper-v2/
+models/kotoba-whisper-v2.2-faster/
 ├── config.json
 ├── model.bin
 ├── preprocessor_config.json
@@ -61,13 +61,13 @@ models/kotoba-whisper-v2/
 
 本项目使用以下两个模型：
 
-#### 1. kotoba-whisper-v2.2-faster（本分支测试版）
+#### 1. kotoba-whisper-v2.2-faster（当前发布基线）
 
 - **用途**：使用 Kotoba-Whisper v2.2 进行日语语音识别。
 - **格式**：第三方转换的 CTranslate2 / faster-whisper 格式，FP32 权重。
 - **来源**：[`RoachLin/kotoba-whisper-v2.2-faster`](https://huggingface.co/RoachLin/kotoba-whisper-v2.2-faster)。
 - **国内镜像**：[`hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster`](https://hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster)。
-- **说明**：该转换版不是 Kotoba 官方发布；本分支仅用于兼容性和实时性能测试，不覆盖稳定版模型。
+- **说明**：该转换版不是 Kotoba 官方发布；本项目发布版采用它作为当前实时 ASR 基线，使用前请核对模型文件校验值。
 
 下载后放入：
 
@@ -75,7 +75,7 @@ models/kotoba-whisper-v2/
 models/kotoba-whisper-v2.2-faster/
 ```
 
-#### 2. kotoba-whisper-v2（稳定版默认）
+#### 2. kotoba-whisper-v2（备用兼容版）
 
 - **用途**：针对日语语音优化，适合本项目的日语实时字幕场景。
 - **格式**：必须使用 CTranslate2 / faster-whisper 格式。

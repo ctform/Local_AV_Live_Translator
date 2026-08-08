@@ -31,7 +31,7 @@ from faster_whisper import WhisperModel
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audio", type=Path)
-    parser.add_argument("--model", default="kotoba-whisper-v2")
+    parser.add_argument("--model", default="kotoba-whisper-v2.2-faster")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--compute-type", default="float16")
     parser.add_argument("--output", type=Path)
