@@ -26,7 +26,7 @@ class SubtitleOverlay(QWidget):
         
         # Model Settings (Restart required)
         self.whisper_model = self.settings.value("whisper_model", "kotoba-whisper-v2.2-faster")
-        self.trans_model = self.settings.value("trans_model", "quantumcookie/Sakura-qwen2.5-v1.0:1.5b")
+        self.trans_model = self.settings.value("trans_model", "translategemma:4b")
         
         # Cache for Ollama models
         self.ollama_models = []

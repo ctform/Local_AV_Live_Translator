@@ -97,20 +97,19 @@ models/kotoba-whisper-v2/
 
 如果国内镜像无法访问，再使用 Hugging Face 官方文件列表。不要下载 `.pt`、Transformers 或 Safetensors 格式文件；本项目需要 CTranslate2 / faster-whisper 格式。
 
-### 翻译模型：Sakura 1.5B（本分支实验默认）
+### 翻译模型：TranslateGemma 4B（本分支实验默认）
 
 - **用途**：将识别出的日文翻译为简体中文。
 - **运行方式**：通过本机 Ollama API 调用，不由 Whisper 加载。
 - **模型来源与命令**：
   ```bash
-  ollama pull quantumcookie/Sakura-qwen2.5-v1.0:1.5b
-  ollama run quantumcookie/Sakura-qwen2.5-v1.0:1.5b
+  ollama pull translategemma:4b
+  ollama run translategemma:4b
   ```
-- **来源**：[Ollama quantumcookie/Sakura-qwen2.5-v1.0](https://ollama.com/quantumcookie/Sakura-qwen2.5-v1.0)。
-- **规格**：Ollama 标签标称 1.5B，实际下载体积约 3.6GB；面向日语汉化/翻译。
-- **说明**：当前分支优先测试 Sakura 1.5B 的实时性与日中翻译质量，不改变正式发布基线。
-- **质量对照**：可选用 `quantumcookie/Sakura-Galtransl-v3.7:7b`（约 6.3GB）进行质量/延迟对比；通过 `LAVT_TRANSLATOR_MODEL` 环境变量切换。
-- **第三方模型说明**：上述 Sakura/GalTransl 标签来自 Ollama 社区托管/转换仓库，不等同于 SakuraLLM 官方发布。
+- **来源**：[Ollama TranslateGemma](https://ollama.com/library/translategemma)。
+- **规格**：Gemma 3 系列 4B 参数，Ollama 量化体积约 3.3GB，支持日语 `ja` 到简体中文 `zh-Hans`。
+- **说明**：当前分支恢复使用 TranslateGemma 4B 进行实时性与翻译质量测试；它超过 3B 参数限制，不是正式发布基线。
+- **备选测试**：Sakura/GalTransl 模型仍可通过 `LAVT_TRANSLATOR_MODEL` 环境变量切换。
 - **国内镜像**：目前未确认到可直接替代的官方国内 Ollama 模型仓库；请按网络环境配置 Ollama 镜像。
 
 旧版发布基线使用 `hy-mt2-1.8b`，不会因本测试分支而改变。
@@ -347,7 +346,7 @@ python build.py
 ### 中文字幕没有出现
 
 - 确认 Ollama 正在运行；
-- 确认已执行 `ollama pull quantumcookie/Sakura-qwen2.5-v1.0:1.5b`；
+- 确认已执行 `ollama pull translategemma:4b`；
 - 在终端查看 Ollama 和程序日志；
 - 确认模型名与 `main.py` 中的配置一致。
 
