@@ -97,7 +97,7 @@ models/kotoba-whisper-v2/
 
 如果国内镜像无法访问，再使用 Hugging Face 官方文件列表。不要下载 `.pt`、Transformers 或 Safetensors 格式文件；本项目需要 CTranslate2 / faster-whisper 格式。
 
-### 翻译模型：TranslateGemma 4B（本分支实验默认）
+### 翻译模型：TranslateGemma 4B（当前正式默认）
 
 - **用途**：将识别出的日文翻译为简体中文。
 - **运行方式**：通过本机 Ollama API 调用，不由 Whisper 加载。
@@ -108,11 +108,9 @@ models/kotoba-whisper-v2/
   ```
 - **来源**：[Ollama TranslateGemma](https://ollama.com/library/translategemma)。
 - **规格**：Gemma 3 系列 4B 参数，Ollama 量化体积约 3.3GB，支持日语 `ja` 到简体中文 `zh-Hans`。
-- **说明**：当前分支恢复使用 TranslateGemma 4B 进行实时性与翻译质量测试；它超过 3B 参数限制，不是正式发布基线。
-- **备选测试**：Sakura/GalTransl 模型仍可通过 `LAVT_TRANSLATOR_MODEL` 环境变量切换。
+- **说明**：当前发布版本默认使用 TranslateGemma 4B；它超过原先的 3B 参数限制，首次运行前需要额外下载模型。
+- **模型覆盖**：可通过 `LAVT_TRANSLATOR_MODEL` 环境变量切换其他已安装的 Ollama 模型，例如 Sakura/GalTransl。
 - **国内镜像**：目前未确认到可直接替代的官方国内 Ollama 模型仓库；请按网络环境配置 Ollama 镜像。
-
-旧版发布基线使用 `hy-mt2-1.8b`，不会因本测试分支而改变。
 
 - **API 地址**：`http://127.0.0.1:11434/api/generate`
 - **推理方式**：本地 HTTP、非流式响应。
@@ -134,8 +132,8 @@ models/kotoba-whisper-v2/
 | 配置 | 显存 | 建议 | 说明 |
 |---|---:|---|---|
 | 最低可运行 | 4 GB | 不推荐 | 可能需要降低并发或改用 CPU，实时性取决于场景 |
-| 入门实时 | 6 GB | 可用 | 适合 `translategemma:4b` 测试，建议关闭其他占用显存的程序 |
-| 推荐 | 8 GB | 推荐 | 适合当前 `kotoba-whisper-v2.2-faster + translategemma:4b` 测试组合 |
+| 入门实时 | 6 GB | 可用 | 适合 `translategemma:4b`，建议关闭其他占用显存的程序 |
+| 推荐 | 8 GB | 推荐 | 适合当前 `kotoba-whisper-v2.2-faster + translategemma:4b` 组合 |
 | 舒适运行 | 12 GB 及以上 | 更佳 | 余量更充足，适合高分辨率播放或同时运行其他 GPU 程序 |
 
 ### 推荐显卡档位
