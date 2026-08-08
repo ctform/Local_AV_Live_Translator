@@ -42,7 +42,7 @@ class SubtitleApp:
         )
         trans_model = os.environ.get(
             "LAVT_TRANSLATOR_MODEL",
-            settings.value("trans_model", "hy-mt2-1.8b")
+            settings.value("trans_model", "translategemma:4b")
         )
         device_index = os.environ.get("LAVT_AUDIO_DEVICE_INDEX")
         try:

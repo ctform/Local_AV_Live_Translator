@@ -97,16 +97,22 @@ models/kotoba-whisper-v2/
 
 如果国内镜像无法访问，再使用 Hugging Face 官方文件列表。不要下载 `.pt`、Transformers 或 Safetensors 格式文件；本项目需要 CTranslate2 / faster-whisper 格式。
 
-### 翻译模型：hy-mt2-1.8b
+### 翻译模型：TranslateGemma 4B（本分支测试版）
 
 - **用途**：将识别出的日文翻译为简体中文。
 - **运行方式**：通过本机 Ollama API 调用，不由 Whisper 加载。
 - **模型来源与命令**：
   ```bash
-  ollama pull hy-mt2-1.8b
-  ollama run hy-mt2-1.8b
+  ollama pull translategemma:4b
+  ollama run translategemma:4b
   ```
-- **国内镜像**：Ollama 模型目前没有确认到可直接替代的官方国内仓库；建议使用 Ollama 官方模型源，或按网络环境配置 Ollama 镜像。
+- **来源**：[Ollama TranslateGemma](https://ollama.com/library/translategemma)。
+- **规格**：Gemma 3 系列 4B 参数，Ollama 量化体积约 3.3GB，支持日语 `ja` 到简体中文 `zh-Hans`。
+- **说明**：本分支用于 TranslateGemma 4B 实时性和翻译质量测试；它超过 3B 参数限制，不是正式发布基线。
+- **国内镜像**：目前未确认到可直接替代的官方国内 Ollama 模型仓库；请按网络环境配置 Ollama 镜像。
+
+旧版发布基线使用 `hy-mt2-1.8b`，不会因本测试分支而改变。
+
 - **API 地址**：`http://127.0.0.1:11434/api/generate`
 - **推理方式**：本地 HTTP、非流式响应。
 - **默认温度**：`0.1`。
@@ -127,8 +133,8 @@ models/kotoba-whisper-v2/
 | 配置 | 显存 | 建议 | 说明 |
 |---|---:|---|---|
 | 最低可运行 | 4 GB | 不推荐 | 可能需要降低并发或改用 CPU，实时性取决于场景 |
-| 入门实时 | 6 GB | 可用 | 适合 `hy-mt2-1.8b`，建议关闭其他占用显存的程序 |
-| 推荐 | 8 GB | 推荐 | 适合当前 `kotoba-whisper-v2 + hy-mt2-1.8b` 组合 |
+| 入门实时 | 6 GB | 可用 | 适合 `translategemma:4b` 测试，建议关闭其他占用显存的程序 |
+| 推荐 | 8 GB | 推荐 | 适合当前 `kotoba-whisper-v2.2-faster + translategemma:4b` 测试组合 |
 | 舒适运行 | 12 GB 及以上 | 更佳 | 余量更充足，适合高分辨率播放或同时运行其他 GPU 程序 |
 
 ### 推荐显卡档位
@@ -201,7 +207,7 @@ python -m pip install PyAudioWPatch
 安装 Ollama 后，在终端执行：
 
 ```bash
-ollama pull hy-mt2-1.8b
+ollama pull translategemma:4b
 ```
 
 `pull` 只负责下载模型，不会启动 Ollama 服务。请先启动服务：
@@ -215,7 +221,7 @@ ollama serve
 建议首次使用前手动预热翻译模型：
 
 ```bash
-ollama run hy-mt2-1.8b
+ollama run translategemma:4b
 ```
 
 看到交互提示后输入一条简单测试内容，确认模型已经加载；测试完成后按 `Ctrl+D`（Windows 终端也可尝试 `Ctrl+C`）退出交互界面。这样正式启动本程序后，第一句翻译通常不会再承担模型首次加载的等待时间。
@@ -332,20 +338,20 @@ python build.py
 
 ## 从其他目录启动
 
-程序会根据源码文件位置定位 `models/`，不要求当前终端目录固定为项目根目录。推荐使用项目根目录中的 `run.bat` 启动；打包后也请将 `models/kotoba-whisper-v2/` 放在程序目录下的 `models/` 中。
+程序会根据源码文件位置定位 `models/`，不要求当前终端目录固定为项目根目录。推荐使用项目根目录中的 `run.bat` 启动；打包后也请将 `models/kotoba-whisper-v2.2-faster/` 放在程序目录下的 `models/` 中。
 
 ## 常见问题
 
 ### 中文字幕没有出现
 
 - 确认 Ollama 正在运行；
-- 确认已执行 `ollama pull hy-mt2-1.8b`；
+- 确认已执行 `ollama pull translategemma:4b`；
 - 在终端查看 Ollama 和程序日志；
 - 确认模型名与 `main.py` 中的配置一致。
 
 ### 日文识别为空或明显错误
 
-- 确认 `models/kotoba-whisper-v2/model.bin` 存在；
+- 确认 `models/kotoba-whisper-v2.2-faster/model.bin` 存在；
 - 确认捕获到的是目标影片声音而不是麦克风；
 - 提高影片音量并关闭过强的系统降噪；
 - 使用 NVIDIA GPU 以降低实时识别积压。
