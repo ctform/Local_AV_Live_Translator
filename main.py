@@ -63,7 +63,11 @@ class SubtitleApp:
         
         # Start Sub-systems
         self.stt.start()
-        self.audio_cap.start()
+        if not self.audio_cap.start():
+            print("Audio capture failed to start; stopping application.")
+            self.stt.stop()
+            self.running = False
+            return
         
         # Start Coordinator (Moves data between systems)
         self.coordinator_thread = threading.Thread(target=self._coordination_loop, daemon=True)
@@ -133,9 +137,20 @@ class SubtitleApp:
         next_sentence_id = 1
         batch_started_at = None
         BATCH_WINDOW = 0.12
+        last_health_log = 0.0
         
         print("Coordinator loop started.")
         while self.running:
+            now = time.time()
+            if now - last_health_log >= 10:
+                print(
+                    f"Health: audio_alive={bool(self.audio_cap.thread and self.audio_cap.thread.is_alive())} "
+                    f"audio_queue={self.audio_cap.audio_queue.qsize()} "
+                    f"stt_alive={bool(self.stt.processing_thread and self.stt.processing_thread.is_alive())} "
+                    f"stt_queue={self.stt.input_queue.qsize()} result_queue={self.stt.result_queue.qsize()}"
+                )
+                last_health_log = now
+
             # 1. Get Audio -> Feed to STT
             audio_data = self.audio_cap.get_audio_data()
             if audio_data is not None:
@@ -179,6 +194,10 @@ class SubtitleApp:
         self.running = False
         self.audio_cap.stop()
         self.stt.stop()
+        if self.coordinator_thread:
+            self.coordinator_thread.join(timeout=3)
+            if self.coordinator_thread.is_alive():
+                print("Coordinator thread did not stop within 3 seconds.")
         executor = getattr(self, "translation_executor", None)
         if executor:
             executor.shutdown(wait=False, cancel_futures=True)

@@ -16,11 +16,15 @@ class AudioCapture:
         :param device_index: Index of the device to use (None = auto-detect loopback)
         """
         self.sample_rate = sample_rate
-        self.audio_queue = queue.Queue()
+        self.audio_queue = queue.Queue(maxsize=8)
         self.running = False
         self.thread = None
         self.device_index = device_index
         self.selected_device = None
+        self.stream = None
+        self._stream_lock = threading.Lock()
+        self._ready = threading.Event()
+        self.last_error = None
         self.p = pyaudio.PyAudio()
         
     def __del__(self):
@@ -114,15 +118,32 @@ class AudioCapture:
                 return False
                 
         self.running = True
+        self._ready.clear()
+        self.last_error = None
         self.thread = threading.Thread(target=self._record_loop, daemon=True)
         self.thread.start()
+        if not self._ready.wait(timeout=5):
+            self.running = False
+            print("Audio capture failed: device did not become ready.")
+            return False
         print("Audio capture started.")
-        return True
+        return self.running
 
     def stop(self):
         self.running = False
+        with self._stream_lock:
+            stream = self.stream
+            self.stream = None
+        if stream:
+            try:
+                stream.stop_stream()
+                stream.close()
+            except Exception as e:
+                print(f"Audio stream close error: {e}")
         if self.thread:
-            self.thread.join()
+            self.thread.join(timeout=3)
+            if self.thread.is_alive():
+                print("Audio capture thread did not stop within 3 seconds.")
         print("Audio capture stopped.")
 
     def _record_loop(self):
@@ -160,11 +181,16 @@ class AudioCapture:
                 
                 print(f"Successfully started recording from: {dev_info['name']}")
                 self.selected_device = dev_info # Update selected if fell back
+                with self._stream_lock:
+                    self.stream = stream
+                self._ready.set()
+                consecutive_errors = 0
                 
                 while self.running:
                     try:
                         # Read audio data
                         data = stream.read(chunk_size, exception_on_overflow=False)
+                        consecutive_errors = 0
                         audio_data = np.frombuffer(data, dtype=np.float32)
                         
                         # Convert to mono if stereo
@@ -180,28 +206,54 @@ class AudioCapture:
                                 dev_sample_rate,
                             ).astype(np.float32)
                         
-                        self.audio_queue.put(audio_data.astype(np.float32))
+                        try:
+                            self.audio_queue.put_nowait(audio_data.astype(np.float32))
+                        except queue.Full:
+                            try:
+                                self.audio_queue.get_nowait()
+                                self.audio_queue.put_nowait(audio_data.astype(np.float32))
+                            except queue.Empty:
+                                pass
                         
                     except Exception as e:
-                        print(f"Recording error: {e}")
+                        consecutive_errors += 1
+                        self.last_error = str(e)
+                        print(f"Recording error ({consecutive_errors}/3): {e}")
+                        if consecutive_errors >= 3:
+                            break
                         time.sleep(0.5)
                         
-                stream.stop_stream()
-                stream.close()
+                try:
+                    stream.stop_stream()
+                    stream.close()
+                except Exception:
+                    pass
+                with self._stream_lock:
+                    if self.stream is stream:
+                        self.stream = None
+                if self.running:
+                    print("Audio stream failed; trying another device.")
+                    continue
                 return # Exit if we successfully recorded and then stopped
                 
             except Exception as e:
                 print(f"Failed to open device {dev_info['name']}: {e}")
                 # Continue to next device in list
         
+        self.last_error = "Could not open any audio device"
+        self.running = False
+        self._ready.set()
         print("Error: Could not open any audio device.")
         print("提示: 请尝试选择其他设备，或检查设备是否被其他程序占用")
 
     def get_audio_data(self):
         """Retrieve all available audio data from queue flattened."""
         data_list = []
-        while not self.audio_queue.empty():
-            data_list.append(self.audio_queue.get())
+        while True:
+            try:
+                data_list.append(self.audio_queue.get_nowait())
+            except queue.Empty:
+                break
         
         if not data_list:
             return None

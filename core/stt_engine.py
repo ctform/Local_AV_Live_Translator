@@ -67,7 +67,9 @@ class STTEngine:
     def stop(self):
         self.running = False
         if self.processing_thread:
-            self.processing_thread.join()
+            self.processing_thread.join(timeout=3)
+            if self.processing_thread.is_alive():
+                print("STT processing thread did not stop within 3 seconds.")
 
     def add_audio(self, audio_data):
         if audio_data is not None and len(audio_data) > 0:
@@ -96,8 +98,14 @@ class STTEngine:
             try:
                 # 1. Fetch new audio (non-blocking)
                 new_chunks = []
-                while not self.input_queue.empty():
-                    new_chunks.append(self.input_queue.get())
+                total_samples = 0
+                while total_samples < 16000 * 2:
+                    try:
+                        chunk = self.input_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                    new_chunks.append(chunk)
+                    total_samples += len(chunk)
                 
                 if new_chunks:
                     chunk_data = np.concatenate(new_chunks).astype(np.float32)
@@ -123,6 +131,7 @@ class STTEngine:
                     silence_frames = 0
                     try:
                          # Transcribe current buffer (Fast greedy search)
+                        inference_started = time.perf_counter()
                         segments, info = self.model.transcribe(
                             accumulated_audio,
                             beam_size=3,  # Better Japanese recognition than greedy search
@@ -132,6 +141,9 @@ class STTEngine:
                             condition_on_previous_text=False
                         )
                         current_text = " ".join([segment.text for segment in segments]).strip()
+                        inference_seconds = time.perf_counter() - inference_started
+                        if inference_seconds > 3:
+                            print(f"Slow ASR inference: {inference_seconds:.2f}s for {len(accumulated_audio) / 16000:.2f}s audio; input queue={self.input_queue.qsize()}")
                         
                         # ANTI-HALLUCINATION FILTER
                         HALLUCINATIONS = ["ご視聴ありがとうございました", "視聴ありがとうございました", "チャンネル登録"]
@@ -189,7 +201,10 @@ class STTEngine:
                     final_text = current_text or last_nonempty_text
                     if final_text and final_text != last_final_text:
                          print(f"FINAL (Stable={text_stable}, Timeout={timeout}): {final_text}")
-                         self.result_queue.put((final_text, False)) # False = Final
+                         try:
+                             self.result_queue.put_nowait((final_text, False)) # False = Final
+                         except queue.Full:
+                             print("STT result queue full; dropping stale results.")
                          last_final_text = final_text
                     
                     # Clear buffer
