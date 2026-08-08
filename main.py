@@ -38,7 +38,7 @@ class SubtitleApp:
         settings = QSettings("LiveSubtitle", "Overlay")
         whisper_model = os.environ.get(
             "LAVT_WHISPER_MODEL",
-            settings.value("whisper_model", "kotoba-whisper-v2")
+            settings.value("whisper_model", "kotoba-whisper-v2.2-faster")
         )
         trans_model = os.environ.get(
             "LAVT_TRANSLATOR_MODEL",

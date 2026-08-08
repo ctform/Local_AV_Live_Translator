@@ -1,0 +1,6 @@
+v2.2 CT2 model source: https://hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster
+config.json f277d9390e65adc1630b349151eca38aaf7420c41c814271928854edcfd6ffbe
+model.bin 16b050f845c0465a62ed1d2c72d7b517cc71186cd11edb05f6a46e108ddc6c97
+preprocessor_config.json 7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711
+tokenizer.json 615928f5a25409279b47b47d87a4ca2aaee3bd09f65e1a3df6c9d23c718cfdb
+vocabulary.json 697ee5a65726e46b4d294d1a243d98e1878f5d81caba17891b1c5ebab7a912a9

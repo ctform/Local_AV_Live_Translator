@@ -61,7 +61,21 @@ models/kotoba-whisper-v2/
 
 本项目使用以下两个模型：
 
-#### 1. kotoba-whisper-v2（稳定版默认）
+#### 1. kotoba-whisper-v2.2-faster（本分支测试版）
+
+- **用途**：使用 Kotoba-Whisper v2.2 进行日语语音识别。
+- **格式**：第三方转换的 CTranslate2 / faster-whisper 格式，FP32 权重。
+- **来源**：[`RoachLin/kotoba-whisper-v2.2-faster`](https://huggingface.co/RoachLin/kotoba-whisper-v2.2-faster)。
+- **国内镜像**：[`hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster`](https://hf-mirror.com/RoachLin/kotoba-whisper-v2.2-faster)。
+- **说明**：该转换版不是 Kotoba 官方发布；本分支仅用于兼容性和实时性能测试，不覆盖稳定版模型。
+
+下载后放入：
+
+```text
+models/kotoba-whisper-v2.2-faster/
+```
+
+#### 2. kotoba-whisper-v2（稳定版默认）
 
 - **用途**：针对日语语音优化，适合本项目的日语实时字幕场景。
 - **格式**：必须使用 CTranslate2 / faster-whisper 格式。
@@ -252,7 +266,7 @@ run.bat
 
 | 变量 | 默认值 | 用途 |
 |---|---|---|
-| `LAVT_WHISPER_MODEL` | `kotoba-whisper-v2` | Whisper 模型目录名或模型 ID |
+| `LAVT_WHISPER_MODEL` | `kotoba-whisper-v2.2-faster` | Whisper 模型目录名或模型 ID |
 | `LAVT_TRANSLATOR_MODEL` | `hy-mt2-1.8b` | Ollama 翻译模型名 |
 | `LAVT_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama 服务地址 |
 | `LAVT_AUDIO_DEVICE_INDEX` | 自动检测 | 仅在自动 Loopback 检测失败时指定设备编号 |
@@ -260,7 +274,7 @@ run.bat
 Windows 示例：
 
 ```bat
-set LAVT_WHISPER_MODEL=kotoba-whisper-v2
+set LAVT_WHISPER_MODEL=kotoba-whisper-v2.2-faster
 set LAVT_TRANSLATOR_MODEL=hy-mt2-1.8b
 set LAVT_OLLAMA_URL=http://127.0.0.1:11434
 set LAVT_AUDIO_DEVICE_INDEX=12
