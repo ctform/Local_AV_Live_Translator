@@ -3,8 +3,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
+
+
+def add_local_cuda_paths() -> None:
+    """Expose CUDA DLLs installed inside the project venv on Windows."""
+    if os.name != "nt":
+        return
+    site_packages = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
+    for relative_path in (
+        Path("nvidia") / "cublas" / "bin",
+        Path("ctranslate2"),
+    ):
+        dll_dir = site_packages / relative_path
+        if dll_dir.exists():
+            os.add_dll_directory(str(dll_dir))
+            os.environ["PATH"] = str(dll_dir) + os.pathsep + os.environ.get("PATH", "")
+
+
+add_local_cuda_paths()
 
 from faster_whisper import WhisperModel
 

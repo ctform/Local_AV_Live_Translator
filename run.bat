@@ -17,6 +17,14 @@ if not exist "%PYTHON%" (
     exit /b 1
 )
 
+rem Make the CUDA runtime installed in this venv visible to CTranslate2.
+if exist ".venv\Lib\site-packages\nvidia\cublas\bin" (
+    set "PATH=%~dp0.venv\Lib\site-packages\nvidia\cublas\bin;%PATH%"
+)
+if exist ".venv\Lib\site-packages\ctranslate2" (
+    set "PATH=%~dp0.venv\Lib\site-packages\ctranslate2;%PATH%"
+)
+
 %PYTHON% main.py
 
 if errorlevel 1 (

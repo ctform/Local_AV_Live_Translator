@@ -143,7 +143,7 @@ models/kotoba-whisper-v2/
 
 - 需要安装与当前 NVIDIA 驱动兼容的 CUDA 运行库；
 - `faster-whisper` 依赖 CTranslate2，GPU 运行还需要兼容的 cuBLAS 和 cuDNN；
-- 新版 CTranslate2 通常面向 CUDA 12/cuDNN 9，实际版本应以 `faster-whisper` 官方说明及安装时的依赖要求为准；
+- 新版 CTranslate2 通常面向 CUDA 12/cuDNN 9，项目虚拟环境应安装匹配的 CUDA 运行库；当前环境使用 `nvidia-cublas-cu12`；
 - 显卡驱动应保持较新版本，并确认 `nvidia-smi` 能正常识别显卡。
 
 检查显卡：
