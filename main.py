@@ -42,7 +42,7 @@ class SubtitleApp:
         )
         trans_model = os.environ.get(
             "LAVT_TRANSLATOR_MODEL",
-            settings.value("trans_model", "translategemma:4b")
+            settings.value("trans_model", "quantumcookie/Sakura-qwen2.5-v1.0:1.5b")
         )
         device_index = os.environ.get("LAVT_AUDIO_DEVICE_INDEX")
         try:

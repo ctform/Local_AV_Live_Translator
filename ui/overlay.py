@@ -26,7 +26,7 @@ class SubtitleOverlay(QWidget):
         
         # Model Settings (Restart required)
         self.whisper_model = self.settings.value("whisper_model", "kotoba-whisper-v2.2-faster")
-        self.trans_model = self.settings.value("trans_model", "translategemma:4b")
+        self.trans_model = self.settings.value("trans_model", "quantumcookie/Sakura-qwen2.5-v1.0:1.5b")
         
         # Cache for Ollama models
         self.ollama_models = []
@@ -62,7 +62,12 @@ class SubtitleOverlay(QWidget):
             print(f"Failed to scan models: {e}")
             
         # Fallback if scan fails
-        return ["translategemma:4b", "qwen:1.8b", "llama3", "gemma2"]
+        return [
+            "quantumcookie/Sakura-qwen2.5-v1.0:1.5b",
+            "quantumcookie/Sakura-Galtransl-v3.7:7b",
+            "translategemma:4b",
+            "hy-mt2-1.8b:latest",
+        ]
 
     def get_whisper_models(self):
         """Scan 'models' directory for local Whisper models"""

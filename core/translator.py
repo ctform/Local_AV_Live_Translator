@@ -2,9 +2,9 @@ import os
 import requests
 
 class TranslatorEngine:
-    def __init__(self, source="ja", target="zh", use_ollama=True, model="translategemma:4b"):
+    def __init__(self, source="ja", target="zh", use_ollama=True, model="quantumcookie/Sakura-qwen2.5-v1.0:1.5b"):
         """
-        Translator using TranslateGemma 4B via local Ollama.
+        Translator using Sakura 1.5B via local Ollama.
         """
         # Clear proxy for local requests
         os.environ.pop('http_proxy', None)
@@ -18,7 +18,7 @@ class TranslatorEngine:
 
     def _resolve_model(self, requested_model):
         """Use an installed Ollama tag when a stale saved setting is present."""
-        default_model = os.environ.get("LAVT_TRANSLATOR_MODEL", "translategemma:4b")
+        default_model = os.environ.get("LAVT_TRANSLATOR_MODEL", "quantumcookie/Sakura-qwen2.5-v1.0:1.5b")
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=3,
                                     proxies={"http": None, "https": None})
